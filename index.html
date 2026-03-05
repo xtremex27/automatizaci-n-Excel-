@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrector de Hoja de Ruta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 40px 36px;
+            max-width: 460px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            color: #fff;
+        }
+
+        .logo {
+            font-size: 42px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 6px;
+            background: linear-gradient(90deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            font-family: 'Inter', monospace;
+            margin-bottom: 20px;
+            transition: border 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #a78bfa;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(167, 139, 250, 0.5);
+            border-radius: 14px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            background: rgba(167, 139, 250, 0.05);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #a78bfa;
+            background: rgba(167, 139, 250, 0.12);
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .drop-icon {
+            font-size: 34px;
+            margin-bottom: 8px;
+        }
+
+        .drop-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .drop-sub {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 4px;
+        }
+
+        .file-chosen {
+            font-size: 13px;
+            color: #a78bfa;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 18px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .result-box {
+            display: none;
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .result-box.success {
+            background: rgba(52, 211, 153, 0.12);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #6ee7b7;
+        }
+
+        .result-box.error {
+            background: rgba(248, 113, 113, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: #fca5a5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <div class="logo">🚚</div>
+        <h1>Corrector de Hoja de Ruta</h1>
+        <p class="subtitle">Sube el Excel con formato incorrecto y se descargará corregido automáticamente.</p>
+
+        <label>URL del servidor Python:</label>
+        <input type="text" id="serverUrl" value="http://localhost:5000/corregir-hr"
+            placeholder="http://TU_SERVIDOR:5000/corregir-hr">
+
+        <label>Archivo Excel (.xls / .xlsx):</label>
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept=".xls,.xlsx" onchange="mostrarArchivo()">
+            <div class="drop-icon">📂</div>
+            <div class="drop-text">Arrastra el archivo aquí o haz clic</div>
+            <div class="drop-sub">Formatos aceptados: .xls y .xlsx</div>
+            <div class="file-chosen" id="fileChosen"></div>
+        </div>
+
+        <button id="btn" onclick="uploadFile()">⚡ Corregir Excel</button>
+
+        <div class="loader" id="loader">
+            <span class="spinner"></span> Procesando archivo, por favor espera…
+        </div>
+
+        <div class="result-box" id="resultBox"></div>
+    </div>
+
+    <script>
+        // Drag & drop visual
+        const dropZone = document.getElementById('dropZone');
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            document.getElementById('fileInput').files = e.dataTransfer.files;
+            mostrarArchivo();
+        });
+
+        function mostrarArchivo() {
+            const f = document.getElementById('fileInput').files[0];
+            document.getElementById('fileChosen').textContent = f ? `✔ ${f.name}` : '';
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            const loader = document.getElementById('loader');
+            const resultBox = document.getElementById('resultBox');
+            const btn = document.getElementById('btn');
+
+            resultBox.style.display = 'none';
+
+            if (!fileInput.files.length) {
+                showResult('Por favor selecciona un archivo Excel primero.', 'error');
+                return;
+            }
+            if (!serverUrl) {
+                showResult('Por favor ingresa la URL del servidor.', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('data', file);
+
+            loader.style.display = 'block';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(serverUrl, { method: 'POST', body: formData });
+
+                if (!response.ok) {
+                    let msg = 'Error en el servidor.';
+                    try { const j = await response.json(); msg = j.mensaje || msg; } catch (_) { }
+                    throw new Error(msg);
+                }
+
+                // Descargar el archivo
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+
+                let filename = file.name.replace(/\.xlsx?$/i, '_CORREGIDO.xlsx');
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.includes('filename=')) {
+                    let raw = disposition.split('filename=')[1];
+                    filename = raw.replace(/^["']|["']$/g, '');
+                }
+
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(downloadUrl);
+
+                const total = response.headers.get('X-Total-Entries') || '?';
+                const hr = response.headers.get('X-Hoja-De-Ruta') || '?';
+                const distrito = response.headers.get('X-Distrito') || '?';
+
+                showResult(`✅ ¡Archivo procesado con éxito!<br>📦 Entradas: <b>${total}</b> &nbsp;|&nbsp; 📋 HR: <b>${hr}</b> &nbsp;|&nbsp; 📍 Distrito: <b>${distrito}</b>`, 'success');
+
+            } catch (err) {
+                showResult(`❌ ${err.message}`, 'error');
+            } finally {
+                loader.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function showResult(html, type) {
+            const box = document.getElementById('resultBox');
+            box.innerHTML = html;
+            box.className = `result-box ${type}`;
+            box.style.display = 'block';
+        }
+    </script>
+
+</body>
+
+</html>
