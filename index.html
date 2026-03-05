@@ -32,7 +32,7 @@
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 20px;
             padding: 40px 36px;
-            max-width: 460px;
+            max-width: 500px;
             width: 100%;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
             color: #fff;
@@ -59,33 +59,7 @@
             text-align: center;
             font-size: 13px;
             color: rgba(255, 255, 255, 0.55);
-            margin-bottom: 30px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.75);
-            margin-bottom: 6px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 13px;
-            font-family: 'Inter', monospace;
-            margin-bottom: 20px;
-            transition: border 0.2s;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #a78bfa;
+            margin-bottom: 28px;
         }
 
         .drop-zone {
@@ -96,7 +70,7 @@
             cursor: pointer;
             transition: all 0.25s;
             background: rgba(167, 139, 250, 0.05);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             position: relative;
         }
 
@@ -131,11 +105,28 @@
             margin-top: 4px;
         }
 
-        .file-chosen {
+        .file-list {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .file-item {
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.25);
+            border-radius: 8px;
+            padding: 8px 12px;
             font-size: 13px;
-            color: #a78bfa;
-            margin-top: 8px;
-            font-weight: 600;
+            color: #c4b5fd;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-item .status {
+            margin-left: auto;
+            font-size: 12px;
         }
 
         button {
@@ -168,7 +159,7 @@
         .loader {
             display: none;
             text-align: center;
-            margin-top: 18px;
+            margin-top: 16px;
             font-size: 14px;
             color: rgba(255, 255, 255, 0.6);
         }
@@ -191,22 +182,21 @@
             }
         }
 
-        .result-box {
-            display: none;
-            margin-top: 18px;
-            padding: 14px 16px;
-            border-radius: 12px;
+        .msg {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
             font-size: 13px;
             font-weight: 500;
         }
 
-        .result-box.success {
+        .msg.ok {
             background: rgba(52, 211, 153, 0.12);
             border: 1px solid rgba(52, 211, 153, 0.3);
             color: #6ee7b7;
         }
 
-        .result-box.error {
+        .msg.err {
             background: rgba(248, 113, 113, 0.12);
             border: 1px solid rgba(248, 113, 113, 0.3);
             color: #fca5a5;
@@ -215,32 +205,28 @@
 </head>
 
 <body>
-
     <div class="card">
         <div class="logo">🚚</div>
         <h1>Corrector de Hoja de Ruta</h1>
-        <p class="subtitle">Sube el Excel con formato incorrecto y se descargará corregido automáticamente.</p>
+        <p class="subtitle">Sube uno o varios Excel con formato incorrecto y se descargarán corregidos.</p>
 
-        <label>Archivo Excel (.xls / .xlsx):</label>
         <div class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput" accept=".xls,.xlsx" onchange="mostrarArchivo()">
+            <input type="file" id="fileInput" accept=".xls,.xlsx" multiple onchange="mostrarArchivos()">
             <div class="drop-icon">📂</div>
-            <div class="drop-text">Arrastra el archivo aquí o haz clic</div>
-            <div class="drop-sub">Formatos aceptados: .xls y .xlsx</div>
-            <div class="file-chosen" id="fileChosen"></div>
+            <div class="drop-text">Arrastra archivos aquí o haz clic</div>
+            <div class="drop-sub">Formatos: .xls y .xlsx — puedes seleccionar varios a la vez</div>
         </div>
 
-        <button id="btn" onclick="uploadFile()">⚡ Corregir Excel</button>
-
-        <div class="loader" id="loader">
-            <span class="spinner"></span> Procesando archivo, por favor espera…
-        </div>
-
-        <div class="result-box" id="resultBox"></div>
+        <div class="file-list" id="fileList"></div>
+        <button id="btn" onclick="procesarTodos()">⚡ Corregir y Descargar</button>
+        <div class="loader" id="loader"><span class="spinner"></span> Procesando archivos…</div>
+        <div id="msg"></div>
     </div>
 
     <script>
-        // Drag & drop visual
+        // La URL apunta al mismo servidor que sirve este HTML (funciona tanto local como en Vercel)
+        const API = window.location.origin + '/corregir-hr';
+
         const dropZone = document.getElementById('dropZone');
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -248,85 +234,75 @@
             e.preventDefault();
             dropZone.classList.remove('dragover');
             document.getElementById('fileInput').files = e.dataTransfer.files;
-            mostrarArchivo();
+            mostrarArchivos();
         });
 
-        function mostrarArchivo() {
-            const f = document.getElementById('fileInput').files[0];
-            document.getElementById('fileChosen').textContent = f ? `✔ ${f.name}` : '';
+        function mostrarArchivos() {
+            const files = Array.from(document.getElementById('fileInput').files);
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            files.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.id = 'item-' + f.name;
+                div.innerHTML = `<span>📄 ${f.name}</span><span class="status" id="st-${f.name}">⏳ Pendiente</span>`;
+                list.appendChild(div);
+            });
         }
 
-        async function uploadFile() {
-            const SERVER_URL = 'https://automatizaci-n-excel.vercel.app/corregir-hr';
-            const fileInput = document.getElementById('fileInput');
-            const loader = document.getElementById('loader');
-            const resultBox = document.getElementById('resultBox');
-            const btn = document.getElementById('btn');
+        async function procesarTodos() {
+            const files = Array.from(document.getElementById('fileInput').files);
+            if (!files.length) { showMsg('Por favor selecciona al menos un archivo Excel.', 'err'); return; }
 
-            resultBox.style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('btn').disabled = true;
+            document.getElementById('msg').innerHTML = '';
 
-            if (!fileInput.files.length) {
-                showResult('Por favor selecciona un archivo Excel primero.', 'error');
-                return;
+            let ok = 0, fail = 0;
+
+            for (const file of files) {
+                const st = document.getElementById('st-' + file.name);
+                if (st) st.textContent = '⏳ Procesando…';
+                try {
+                    const formData = new FormData();
+                    formData.append('data', file);
+                    const response = await fetch(API, { method: 'POST', body: formData });
+
+                    if (!response.ok) {
+                        let msg = 'Error';
+                        try { const j = await response.json(); msg = j.mensaje || msg; } catch (_) { }
+                        throw new Error(msg);
+                    }
+
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    let filename = file.name.replace(/\.xlsx?$/i, '_CORREGIDO.xlsx');
+                    const disp = response.headers.get('Content-Disposition');
+                    if (disp && disp.includes('filename=')) filename = disp.split('filename=')[1].replace(/^["']|["']$/g, '');
+                    a.href = url; a.download = filename;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    URL.revokeObjectURL(url);
+                    if (st) st.textContent = '✅ Descargado';
+                    ok++;
+                } catch (e) {
+                    if (st) st.textContent = '❌ Error';
+                    fail++;
+                }
             }
 
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('data', file);
-
-            loader.style.display = 'block';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(SERVER_URL, { method: 'POST', body: formData });
-
-                if (!response.ok) {
-                    let msg = 'Error en el servidor.';
-                    try { const j = await response.json(); msg = j.mensaje || msg; } catch (_) { }
-                    throw new Error(msg);
-                }
-
-                // Descargar el archivo
-                const blob = await response.blob();
-                const downloadUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-
-                let filename = file.name.replace(/\.xlsx?$/i, '_CORREGIDO.xlsx');
-                const disposition = response.headers.get('Content-Disposition');
-                if (disposition && disposition.includes('filename=')) {
-                    let raw = disposition.split('filename=')[1];
-                    filename = raw.replace(/^["']|["']$/g, '');
-                }
-
-                a.href = downloadUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(downloadUrl);
-
-                const total = response.headers.get('X-Total-Entries') || '?';
-                const hr = response.headers.get('X-Hoja-De-Ruta') || '?';
-                const distrito = response.headers.get('X-Distrito') || '?';
-
-                showResult(`✅ ¡Archivo procesado con éxito!<br>📦 Entradas: <b>${total}</b> &nbsp;|&nbsp; 📋 HR: <b>${hr}</b> &nbsp;|&nbsp; 📍 Distrito: <b>${distrito}</b>`, 'success');
-
-            } catch (err) {
-                showResult(`❌ ${err.message}`, 'error');
-            } finally {
-                loader.style.display = 'none';
-                btn.disabled = false;
-            }
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('btn').disabled = false;
+            if (fail === 0) showMsg(`✅ ${ok} archivo(s) procesado(s) correctamente.`, 'ok');
+            else showMsg(`⚠️ ${ok} procesado(s), ${fail} con error.`, 'err');
         }
 
-        function showResult(html, type) {
-            const box = document.getElementById('resultBox');
-            box.innerHTML = html;
-            box.className = `result-box ${type}`;
-            box.style.display = 'block';
+        function showMsg(html, type) {
+            const el = document.getElementById('msg');
+            el.innerHTML = html;
+            el.className = 'msg ' + type;
         }
     </script>
-
 </body>
 
 </html>
