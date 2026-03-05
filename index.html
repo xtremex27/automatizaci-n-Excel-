@@ -221,10 +221,6 @@
         <h1>Corrector de Hoja de Ruta</h1>
         <p class="subtitle">Sube el Excel con formato incorrecto y se descargará corregido automáticamente.</p>
 
-        <label>URL del servidor Python:</label>
-        <input type="text" id="serverUrl" value="https://automatizaci-n-excel.vercel.app/corregir-hr"
-            placeholder="https://tu-proyecto.vercel.app/corregir-hr">
-
         <label>Archivo Excel (.xls / .xlsx):</label>
         <div class="drop-zone" id="dropZone">
             <input type="file" id="fileInput" accept=".xls,.xlsx" onchange="mostrarArchivo()">
@@ -261,8 +257,8 @@
         }
 
         async function uploadFile() {
+            const SERVER_URL = 'https://automatizaci-n-excel.vercel.app/corregir-hr';
             const fileInput = document.getElementById('fileInput');
-            const serverUrl = document.getElementById('serverUrl').value.trim();
             const loader = document.getElementById('loader');
             const resultBox = document.getElementById('resultBox');
             const btn = document.getElementById('btn');
@@ -271,10 +267,6 @@
 
             if (!fileInput.files.length) {
                 showResult('Por favor selecciona un archivo Excel primero.', 'error');
-                return;
-            }
-            if (!serverUrl) {
-                showResult('Por favor ingresa la URL del servidor.', 'error');
                 return;
             }
 
@@ -286,7 +278,7 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(serverUrl, { method: 'POST', body: formData });
+                const response = await fetch(SERVER_URL, { method: 'POST', body: formData });
 
                 if (!response.ok) {
                     let msg = 'Error en el servidor.';
