@@ -92,7 +92,7 @@ def corregir_excel(file_bytes, filename):
     except Exception:
         df = pd.read_excel(io.BytesIO(file_bytes), header=None, engine='openpyxl')
 
-    data = df.values.tolist()
+    data = df.fillna('').values.tolist()
     hr_numero = detectar_numero_hr(data)
     distrito = detectar_distrito(data)
     entries = extraer_entradas(data, hr_numero, distrito)
